@@ -1,0 +1,120 @@
+<div class="container">
+  <mat-toolbar>
+    <span>Products</span>
+    <div class="example-spacer"></div>
+
+    <div class="example-spacer"></div>
+  </mat-toolbar>
+  <mat-grid-list cols="9" rowHeight="70px">
+    <mat-grid-tile [colspan]="2" [rowspan]="1">
+      <mat-form-field aclass="ancho">
+        <mat-label>Buscar</mat-label>
+        <input
+          matInput
+          (keyup)="applyFilter($event)"
+          placeholder="Ex. ium"
+          #input
+          autocomplete="off"
+        />
+      </mat-form-field>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="1"></mat-grid-tile>
+    <mat-grid-tile [colspan]="2" [rowspan]="1">
+      <mat-form-field class="ancho">
+        <mat-label>Limit</mat-label>
+        <input
+          [class.error]="isInvalid(inputValue)"
+          matInput
+          (keyup)="limit($event)"
+          placeholder="Ex. ium"
+          #input
+          autocomplete="off"
+        />        
+      </mat-form-field>
+      <p style="margin-left: 10px;" class="error-message" *ngIf="isInvalid(inputValue)">
+          Only positive integers are allowed
+        </p>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="1"></mat-grid-tile>
+    <mat-grid-tile [colspan]="2" [rowspan]="1">
+      <mat-form-field class="ancho">
+        <mat-label>Select</mat-label>
+        <mat-select
+          [placeholder]="'Seleccione ...'"
+          (selectionChange)="onSelectionChange($event)"
+        >
+          <mat-option *ngFor="let value of filters" [value]="value">
+            {{ value }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-grid-tile>
+  </mat-grid-list>
+  <div class="mitabla">
+    <div class="mat-elevation-z8">
+      <table mat-table [dataSource]="dataSource" matSort>
+        <!--- Note that these columns can be defined in any order.
+                The actual rendered columns are set as a property on the row definition" -->
+
+        <!-- Id Column -->
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.id }}
+          </td>
+        </ng-container>
+        <!-- Title Column -->
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.title }}
+          </td>
+        </ng-container>
+        <!-- Price Column -->
+        <ng-container matColumnDef="price">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Price</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.price }}
+          </td>
+        </ng-container>
+
+        <!-- Description Column -->
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Description</th>
+          <td mat-cell *matCellDef="let element">{{ element.description }}</td>
+        </ng-container>
+
+        <!-- Category Column -->
+        <ng-container matColumnDef="category">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Category</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.category }}
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+      <div class="botton">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="Next()"
+          [disabled]="!next"
+        >
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="Before()"
+          [disabled]="!before"
+        >
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<br />

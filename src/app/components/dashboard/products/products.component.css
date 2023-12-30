@@ -1,0 +1,61 @@
+.container{
+  position: relative;
+  top: 60px;
+}
+.ancho {
+  width: 40%;
+}
+
+
+.mitabla{
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 500px;
+  margin-top: 10px;
+}
+
+.paginator{
+  min-width: 500px;
+}
+
+th{
+    width: 20%;
+}
+.pointer{
+    cursor: pointer;
+}
+.mat-form-field {
+  font-size: 14px;
+  width: 100%;
+}
+.botton {
+  margin-top: 10px;
+}
+
+.botton button.mat-raised-button {
+  float: right;
+  margin-right: 10px;
+}
+
+@media (max-width:415px){
+  .container{
+    position: relative;
+    top: 60px;
+    width: 95%;
+    left: -45px;
+  }
+  
+  .boton{
+    display: none;
+  }
+}
+.error {
+  border: 1px solid red;
+}
+
+.error-message {
+  color: red;
+}
