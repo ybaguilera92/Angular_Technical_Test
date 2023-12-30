@@ -68,28 +68,24 @@ export class ProductsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   listProduct() {
-    const { dataAll, init, end, all } = this;
-    const slicedData = dataAll?.data?.slice(init, end) || [];
-    this.dataSource.data = [...slicedData];
-    this.next = all > end;
-    this.before = (all - end) <= init;
+    const { dataAll, init, end } = this;
+    this.dataSource.data = dataAll.data.slice(init, end);
+    const remainingItems = this.all - end;
+    this.next = this.all > end;
+    this.before = remainingItems <= init;
   }
 
   Next() {
     const { page } = this;
-    const newInit = this.init + page;
-    const newEnd = this.end + page;
-    this.init = Math.max(newInit, 0);
-    this.end = Math.max(newEnd, 0);
+    this.init += page;
+    this.end += page;
     this.listProduct();
   }
 
   Before() {
     const { page } = this;
-    const newInit = this.init - page;
-    const newEnd = this.end - page;
-    this.init = Math.max(newInit, 0);
-    this.end = Math.max(newEnd, 0);
+    this.init -= page;
+    this.end -= page;
     this.listProduct();
   }
 
