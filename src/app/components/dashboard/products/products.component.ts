@@ -1,28 +1,31 @@
 import { MatTableDataSource } from '@angular/material/table';
-import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
-import { MatSort } from '@angular/material/sort';
+import { Component, OnInit, OnDestroy, OnChanges } from '@angular/core';
 import {
   MatSnackBar,
 } from '@angular/material/snack-bar';
-import { firstValueFrom } from 'rxjs';
 import { MatDialog } from "@angular/material/dialog";
-import { Category } from 'src/app/models/category';
 import { ProductService } from 'src/app/services/product.service';
 import { MatSelectChange } from '@angular/material/select';
+import { Product } from 'src/app/models/products';
+import { Subscription, catchError, of, take, tap } from 'rxjs';
 @Component({
   selector: 'app-categories',
   templateUrl: './products.component.html',
   styleUrls: ['./products.component.css']
 })
-export class ProductsComponent implements OnInit, OnDestroy {
-  listCategory: any = [];
+export class ProductsComponent implements OnInit, OnDestroy, OnChanges {
+  private _subscriptions: Subscription[] = [];
   filters = ['asc', 'desc'];
   inputValue: string = '';
   next: Boolean;
   before: Boolean;
+  all = 0;
+  init = 0;
+  end = 10;
+  page = 10;
   displayedColumns: string[] = ['id', 'title', 'price', 'description', 'category'];
   dataSource!: MatTableDataSource<any>;
-  @ViewChild(MatSort) sort!: MatSort;
+  dataAll!: MatTableDataSource<any>;
   // Private
   /**
     * Constructor
@@ -31,45 +34,71 @@ export class ProductsComponent implements OnInit, OnDestroy {
     private _snackBar: MatSnackBar,
 
     public Dialog: MatDialog) {
-    this.dataSource = new MatTableDataSource<Category>();
+    this.dataSource = new MatTableDataSource<Product>();
+    this.dataAll = new MatTableDataSource<Product>();
     this.next = false;
     this.before = false;
   }
 
   ngOnInit(): void {
-    this.chargeproducts();
+    this.chargeProducts();
   }
-  ngOnDestroy(): void {
+
+  ngOnChanges() {
+    this.listProduct();
+  }
+
+  chargeProducts() {
+
+    const subAll: Subscription = this._productService.getAll().pipe(
+      take(1),
+      tap((res) => {
+        const { length } = res;
+        this.all = length;
+        this.dataAll.data = res;
+        this.listProduct();
+      }),
+      catchError((err) => {
+        console.error(err);
+        return of(null);
+      })
+    ).subscribe();
+    this._subscriptions.push(subAll);
 
   }
-  async chargeproducts() {
-    try {
-      const res = await firstValueFrom(this._productService.getProducts(10))
-      this.dataSource.data = res;
-    } catch (err) {
-      console.log(err);
-    }
-  }
-  async Next() {
-  }
-  async Before() {
 
+  listProduct() {
+    const { dataAll, init, end, all } = this;
+    const slicedData = dataAll?.data?.slice(init, end) || [];
+    this.dataSource.data = [...slicedData];
+    this.next = all > end;
+    this.before = (all - end) <= init;
   }
+
+  Next() {
+    const { page } = this;
+    const newInit = this.init + page;
+    const newEnd = this.end + page;
+    this.init = Math.max(newInit, 0);
+    this.end = Math.max(newEnd, 0);
+    this.listProduct();
+  }
+
+  Before() {
+    const { page } = this;
+    const newInit = this.init - page;
+    const newEnd = this.end - page;
+    this.init = Math.max(newInit, 0);
+    this.end = Math.max(newEnd, 0);
+    this.listProduct();
+  }
+
   applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    const filter = filterValue.trim().toLowerCase();
-    this._productService.getAll()
-      .subscribe({
-        next: res => {
-          this.dataSource.data = res;
-          const filteredData = this.dataSource.data.filter(item => {
-            return item.title.toLowerCase().includes(filter);
-          });
-          this.dataSource.data = filteredData;
-        },
-        error: err => console.error(err)
-      });
+    const filterValue = (event.target as HTMLInputElement).value.trim().toLowerCase();
+    const filteredData = this.dataAll.data.filter(item => item.title.toLowerCase().includes(filterValue));
+    this.dataSource.data = [...filteredData];
   }
+
   isInvalid(filter: string): boolean {
     return /[^0-9]/.test(filter) || filter.includes('.');
   }
@@ -77,28 +106,41 @@ export class ProductsComponent implements OnInit, OnDestroy {
   limit(event: Event) {
     const filterValue = (event.target as HTMLInputElement);
     this.inputValue = filterValue.value.trim().toLowerCase();
-    if (this.isInvalid(this.inputValue)) {
-      filterValue.classList.add('error');
+    if (this.inputValue === '') {
+      this.chargeProducts();
     } else {
-      filterValue.classList.remove('error');
-      this._productService.getProducts(parseInt(this.inputValue, 10))
-        .subscribe({
-          next: res => {
-            this.dataSource.data = res;
-          },
-          error: err => console.error(err)
-        });
+      if (this.isInvalid(this.inputValue)) {
+        filterValue.classList.add('error');
+      } else {
+        filterValue.classList.remove('error');
+        const value = parseInt(this.inputValue, 10);
+        const subLimit = this._productService.getProducts(value)
+          .subscribe({
+            next: res => {
+              this.dataSource.data = res;
+              this.next = false;
+              this.before = false;
+            },
+            error: err => console.error(err)
+          });
+        this._subscriptions.push(subLimit);
+      }
     }
-
   }
+
   onSelectionChange(event: MatSelectChange): void {
     const selectedValue = event.value;
-    this._productService.getOrder(selectedValue)
+    const subOrder = this._productService.getOrder(selectedValue)
       .subscribe({
         next: res => {
-          this.dataSource.data = res;
+          this.dataAll.data = res;
+          this.listProduct();
         },
         error: err => console.error(err)
       });
+    this._subscriptions.push(subOrder);
+  }
+  ngOnDestroy() {
+    this._subscriptions.forEach((sb) => sb.unsubscribe());
   }
 }
